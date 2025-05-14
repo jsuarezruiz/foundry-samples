@@ -110,8 +110,32 @@ class AzureLogicAppTool:
         
         return {"message": "Logic App triggered successfully"}
 
+_logic_app_tool_singleton: Optional[AzureLogicAppTool] = None
 
-def create_event_details_function(logic_app_tool: AzureLogicAppTool, logic_app_name: str) -> Callable:
+def init_logic_app_tool_singleton(subscription_id: str, resource_group: str):
+    """
+    Initialize the singleton instance with subscription_id and resource_group.
+    Call this once before using get_logic_app_tool_singleton().
+    """
+    global _logic_app_tool_singleton
+    _logic_app_tool_singleton = AzureLogicAppTool(subscription_id, resource_group)
+
+def get_logic_app_tool_singleton() -> AzureLogicAppTool:
+    """
+    Get the singleton instance. Must call init_logic_app_tool_singleton first.
+    """
+    global _logic_app_tool_singleton
+    if _logic_app_tool_singleton is None:
+        raise RuntimeError("LogicAppTool singleton not initialized. Call init_logic_app_tool_singleton first.")
+    return _logic_app_tool_singleton
+
+def register_logic_app_singleton(logic_app_name: str, trigger_name: str):
+    """
+    Register a Logic App and its trigger using the singleton.
+    """
+    get_logic_app_tool_singleton().register_logic_app(logic_app_name, trigger_name)
+
+def create_event_details_function(logic_app_name: str) -> Callable:
     """
     Create a function to retrieve event details from Logic App.
     (DEPRECATED: Use the top-level fetch_event_details instead for agent integration.)
@@ -149,9 +173,8 @@ def create_event_details_function(logic_app_tool: AzureLogicAppTool, logic_app_n
         
         try:
             # Call the Logic App and return the result
-            result = logic_app_tool.trigger_logic_app(logic_app_name, payload)
+            result = get_logic_app_tool_singleton().trigger_logic_app(logic_app_name, payload)
             return json.dumps(result)
-            
         except Exception as e:
             return json.dumps({
                 "error": str(e),
@@ -163,7 +186,6 @@ def create_event_details_function(logic_app_tool: AzureLogicAppTool, logic_app_n
 
 
 def fetch_event_details(
-    logic_app_tool: AzureLogicAppTool,
     logic_app_name: str,
     email: str = None,
     start_date: str = None,
@@ -174,7 +196,6 @@ def fetch_event_details(
     """
     Fetch event or meeting details from Microsoft Graph via Logic App.
     Args:
-        logic_app_tool (AzureLogicAppTool): Instance of the AzureLogicAppTool
         logic_app_name (str): Name of the registered Logic App to use
         email (str, optional): The email address of the user whose events are to be retrieved.
         start_date (str, optional): Start of the date range to filter events (ISO 8601 format, e.g., '2025-05-01T00:00:00Z').
@@ -197,10 +218,8 @@ def fetch_event_details(
     payload["includeAttendees"] = include_attendees
     
     try:
-        # Call the Logic App and return the result
-        result = logic_app_tool.trigger_logic_app(logic_app_name, payload)
+        result = get_logic_app_tool_singleton().trigger_logic_app(logic_app_name, payload)
         return json.dumps(result)
-        
     except Exception as e:
         return json.dumps({
             "error": str(e),

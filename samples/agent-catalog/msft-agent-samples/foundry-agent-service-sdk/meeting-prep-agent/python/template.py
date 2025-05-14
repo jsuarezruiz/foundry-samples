@@ -2,6 +2,11 @@ from azure.ai.agents import AgentsClient
 from azure.ai.agents.models import ToolSet, FunctionTool, BingGroundingTool
 from azure.identity import DefaultAzureCredential
 from utils.user_logic_apps import AzureLogicAppTool, fetch_event_details
+from utils.user_logic_apps import (
+    init_logic_app_tool_singleton,
+    register_logic_app_singleton,
+    fetch_event_details,
+)
 
 # Load environment
 from dotenv import load_dotenv
@@ -20,19 +25,19 @@ logic_app_name = os.environ["LOGIC_APP_NAME"]
 trigger_name = os.environ["TRIGGER_NAME"]
 
 # Register Logic App
-logic_app_tool = AzureLogicAppTool(subscription_id, resource_group)
-logic_app_tool.register_logic_app(logic_app_name, trigger_name)
+init_logic_app_tool_singleton(subscription_id, resource_group)
+register_logic_app_singleton(logic_app_name, trigger_name)
 print(f"✅ Registered logic app '{logic_app_name}' with trigger '{trigger_name}'.")
 
 # Register Bing search tool
-bing_tool = BingGroundingTool(connection_id=os.environ["BING_CONNECTION_ID"])
+#bing_tool = BingGroundingTool(connection_id=os.environ["BING_CONNECTION_ID"])
 
 # Register fetch_event_details as a FunctionTool
 function_tool = FunctionTool(functions={fetch_event_details})
 
 # Create Toolset
 toolset = ToolSet()
-toolset.add(bing_tool)
+#toolset.add(bing_tool)
 toolset.add(function_tool)
 
 # Enable auto function calls at the client level
@@ -43,7 +48,7 @@ with agents_client:
     agent = agents_client.create_agent(
         model=os.environ["MODEL_DEPLOYMENT_NAME"],
         name="MeetingsAndInsightsAgent",
-        instructions="""
+        instructions=f"""
 You are a professional meeting preparation assistant that helps users confidently prepare for external meetings by providing relevant attendee background information. You work proactively in the background, leveraging enterprise calendar data and web searches to deliver concise, actionable insights.
 
 Your responsabilities are:
@@ -69,7 +74,7 @@ Your responsabilities are:
    - Minimize noise by focusing only on relevant external meetings
 
 Always follow these instructions:
-- Use the **teamstrigger_Tool** (Logic Apps) to fetch meeting/call events
+- Use the **'{logic_app_name}'** (Logic Apps) to fetch meeting/call events
 - For each specified date, filter results using time boundaries (12:01 AM to 11:59 PM)
 - Process all meetings for the requested date(s) and identify those with external participants
 - Identify external participants as users whose email domains differ from the user's corporate domain
