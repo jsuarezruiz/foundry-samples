@@ -30,14 +30,14 @@ register_logic_app_singleton(logic_app_name, trigger_name)
 print(f"✅ Registered logic app '{logic_app_name}' with trigger '{trigger_name}'.")
 
 # Register Bing search tool
-#bing_tool = BingGroundingTool(connection_id=os.environ["BING_CONNECTION_ID"])
+bing_tool = BingGroundingTool(connection_id=os.environ["BING_CONNECTION_ID"])
 
 # Register fetch_event_details as a FunctionTool
 function_tool = FunctionTool(functions={fetch_event_details})
 
 # Create Toolset
 toolset = ToolSet()
-#toolset.add(bing_tool)
+toolset.add(bing_tool)
 toolset.add(function_tool)
 
 # Enable auto function calls at the client level
