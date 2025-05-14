@@ -41,8 +41,7 @@ class AzureLogicAppTool:
         now = datetime.now(timezone.utc)
         
         # If token doesn't exist or is about to expire (within 5 minutes), refresh it
-        if (not self._token or not self._token_expires_on or
-                now + timedelta(minutes=5) >= self._token_expires_on):
+        if (not self._token or not self._token_expires_on or now + timedelta(minutes=5) >= self._token_expires_on):
             self._token = self.credential.get_token("https://management.azure.com/.default")
             self._token_expires_on = datetime.fromtimestamp(self._token.expires_on, timezone.utc)
             
@@ -164,16 +163,19 @@ def create_event_details_function(logic_app_tool: AzureLogicAppTool, logic_app_n
 
 
 def fetch_event_details(
+    logic_app_tool: AzureLogicAppTool,
+    logic_app_name: str,
     email: str = None,
-    start_date: str = None, 
+    start_date: str = None,
     end_date: str = None,
     event_id: str = None,
     include_attendees: bool = True
 ) -> str:
     """
     Fetch event or meeting details from Microsoft Graph via Logic App.
-    
     Args:
+        logic_app_tool (AzureLogicAppTool): Instance of the AzureLogicAppTool
+        logic_app_name (str): Name of the registered Logic App to use
         email (str, optional): The email address of the user whose events are to be retrieved.
         start_date (str, optional): Start of the date range to filter events (ISO 8601 format, e.g., '2025-05-01T00:00:00Z').
         end_date (str, optional): End of the date range to filter events (ISO 8601 format, e.g., '2025-05-02T00:00:00Z').
