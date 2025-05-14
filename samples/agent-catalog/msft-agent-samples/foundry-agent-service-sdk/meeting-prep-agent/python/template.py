@@ -35,6 +35,9 @@ toolset = ToolSet()
 toolset.add(bing_tool)
 toolset.add(function_tool)
 
+# Enable auto function calls at the client level
+agents_client.enable_auto_function_calls(toolset)
+
 # Create the agent
 with agents_client:
     agent = agents_client.create_agent(
